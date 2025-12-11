@@ -2,8 +2,9 @@
 //
 // Simple API client for Stock Growth Analyzer
 //
-// Prefer explicit env override; otherwise infer from window origin replacing :3000 -> :3001.
-// Fallback to localhost:3001.
+ // Prefer explicit env override; otherwise infer from window origin replacing :3000 -> :3001.
+ // When the frontend is served via HTTPS (e.g., cloud preview), ensure the base URL is also HTTPS
+ // to avoid mixed-content and CORS issues behind the proxy. Fallback to localhost:3001.
 //
 function resolveBaseUrl() {
   // Env override first
