@@ -1,12 +1,37 @@
 //
+//
 // Simple API client for Stock Growth Analyzer
 //
-
-const BASE_URL =
-  (typeof process !== 'undefined' &&
+// Prefer explicit env override; otherwise infer from window origin replacing :3000 -> :3001.
+// Fallback to localhost:3001.
+//
+function resolveBaseUrl() {
+  // Env override first
+  const envVal =
+    typeof process !== 'undefined' &&
     process.env &&
-    process.env.REACT_APP_BACKEND_URL) ||
-  'http://localhost:3001';
+    process.env.REACT_APP_BACKEND_URL &&
+    process.env.REACT_APP_BACKEND_URL.trim();
+  if (envVal) return envVal;
+
+  // Try to infer from current origin (e.g., hosted preview or localhost)
+  if (typeof window !== 'undefined' && window.location && window.location.origin) {
+    try {
+      const u = new URL(window.location.origin);
+      if (u.port === '3000') {
+        u.port = '3001';
+        return u.toString().replace(/\/+$/, '');
+      }
+      // If not on 3000, still try same origin (proxy setups)
+      return window.location.origin.replace(/\/+$/, '');
+    } catch {
+      // ignore
+    }
+  }
+  return 'http://localhost:3001';
+}
+
+const BASE_URL = resolveBaseUrl();
 
 /**
  * Build a full URL from a path.
@@ -62,7 +87,23 @@ export async function analyzeGrowth(payload) {
    * }
    * Returns JSON from backend.
    */
-  const res = await fetch(buildUrl('/analyze-growth'), {
+  const url = buildUrl('/analyze-growth');
+  // Log for verification
+  try {
+    // Minimal, non-PII logging for E2E verification
+    // eslint-disable-next-line no-console
+    console.log('[analyzeGrowth] POST', url, {
+      tickers_preview: Array.isArray(payload?.tickers) ? payload.tickers.slice(0, 5) : undefined,
+      start_date: payload?.start_date,
+      end_date: payload?.end_date,
+      universe: payload?.universe,
+      limit: payload?.limit,
+      price_field: payload?.price_field,
+    });
+  } catch {
+    // ignore
+  }
+  const res = await fetch(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
