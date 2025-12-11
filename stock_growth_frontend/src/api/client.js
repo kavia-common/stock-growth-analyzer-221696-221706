@@ -130,13 +130,22 @@ export async function analyzeGrowth(payload) {
   } catch {
     // ignore
   }
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(payload),
-  });
+  let res;
+  try {
+    res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+  } catch (networkErr) {
+    // More descriptive message for typical "Failed to fetch" / CORS / mixed content issues
+    const hint = `Network error calling ${url}. This may be due to CORS, incorrect REACT_APP_BACKEND_URL, or HTTPS/HTTP mismatch.`;
+    const err = new Error(`${networkErr?.message || 'Failed to fetch'} - ${hint}`);
+    err.cause = networkErr;
+    throw err;
+  }
   return handleResponse(res);
 }
 
@@ -144,4 +153,32 @@ export async function analyzeGrowth(payload) {
 export function getApiBaseUrl() {
   /** Returns the resolved API base URL for display/debug purposes. */
   return BASE_URL;
+}
+
+// PUBLIC_INTERFACE
+export async function runMinimalRepro() {
+  /**
+   * PUBLIC_INTERFACE
+   * Minimal repro for QA: performs the specified POST /analyze-growth request
+   * with empty tickers, start_date=2025-11-11, end_date=2025-12-11, universe=NASDAQ, limit=10.
+   * Usage (in browser console): import { runMinimalRepro } from './api/client'; runMinimalRepro()
+   */
+  const payload = {
+    start_date: '2025-11-11',
+    end_date: '2025-12-11',
+    limit: 10,
+    universe: 'NASDAQ',
+  };
+  // eslint-disable-next-line no-console
+  console.log('[runMinimalRepro] Using base URL:', BASE_URL);
+  try {
+    const data = await analyzeGrowth(payload);
+    // eslint-disable-next-line no-console
+    console.log('[runMinimalRepro] Response:', data);
+    return data;
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.error('[runMinimalRepro] Error:', e);
+    throw e;
+  }
 }
