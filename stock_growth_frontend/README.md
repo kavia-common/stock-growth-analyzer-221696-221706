@@ -40,7 +40,16 @@ If credentials/cookies are used, the backend must enable allow_credentials and m
 - GET base:
   - Local: http://localhost:3001/ (should return {"message": "Healthy"})
   - Cloud: https://vscode-internal-26796-beta.beta01.cloud.kavia.ai:3001/
-- (Optional) GET /cors-info if provided by backend to see `allowed_origins`.
+- GET /cors-info to see `allowed_origins` and confirm your frontend origin is included.
+
+From the frontend, you can also run built-in diagnostics in the browser console:
+```js
+import { diagnosticsRun, getApiBaseUrlDetails, pinApiBaseUrl } from './api/client';
+getApiBaseUrlDetails();   // See how the base URL was resolved
+// Optionally pin a URL if needed to test quickly:
+pinApiBaseUrl('https://<your-host>:3001');
+await diagnosticsRun();   // Runs preflight and POST checks, logs details
+```
 
 If your frontend runs at a preview HTTPS origin, add that exact origin to the backend `ALLOWED_ORIGINS` (comma-separated) and restart backend.
 
