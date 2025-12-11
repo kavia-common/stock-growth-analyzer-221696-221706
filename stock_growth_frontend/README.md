@@ -1,82 +1,48 @@
-# Lightweight React Template for KAVIA
+# Stock Growth Frontend (React)
 
-This project provides a minimal React template with a clean, modern UI and minimal dependencies.
+A modern, lightweight React UI for the Stock Growth Analyzer. Users enter tickers, dates, optional growth filters, and view sortable results.
 
-## Features
+## Configure Backend URL
 
-- **Lightweight**: No heavy UI frameworks - uses only vanilla CSS and React
-- **Modern UI**: Clean, responsive design with KAVIA brand styling
-- **Fast**: Minimal dependencies for quick loading times
-- **Simple**: Easy to understand and modify
+The frontend calls the FastAPI backend at `/analyze-growth`. Set the base URL via environment variable:
 
-## Getting Started
-
-In the project directory, you can run:
-
-### `npm start`
-
-Runs the app in development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
-
-### `npm test`
-
-Launches the test runner in interactive watch mode.
-
-### `npm run build`
-
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
-
-## Customization
-
-### Colors
-
-The main brand colors are defined as CSS variables in `src/App.css`:
-
-```css
-:root {
-  --kavia-orange: #E87A41;
-  --kavia-dark: #1A1A1A;
-  --text-color: #ffffff;
-  --text-secondary: rgba(255, 255, 255, 0.7);
-  --border-color: rgba(255, 255, 255, 0.1);
-}
+- Copy `.env.example` to `.env` and adjust if needed:
+```
+REACT_APP_BACKEND_URL=http://localhost:3001
 ```
 
-### Components
+If not set, the app defaults to `http://localhost:3001`.
 
-This template uses pure HTML/CSS components instead of a UI framework. You can find component styles in `src/App.css`. 
+## Run the App
 
-Common components include:
-- Buttons (`.btn`, `.btn-large`)
-- Container (`.container`)
-- Navigation (`.navbar`)
-- Typography (`.title`, `.subtitle`, `.description`)
+Install dependencies and start the development server:
 
-## Learn More
+```
+npm install
+npm start
+```
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+Open http://localhost:3000 in your browser.
 
-### Code Splitting
+## Usage
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+1. Enter one or more tickers (comma-separated), e.g., `AAPL, MSFT`.
+2. Select Single date or Date range.
+3. Optionally set Min/Max growth %, Top N limit, and Price field (close/adj_close/open).
+4. Click Analyze Growth to fetch and display results.
+5. Click on table headers to sort by a column (e.g., Growth %).
 
-### Analyzing the Bundle Size
+The last used inputs are saved to localStorage for convenience.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+## Build
 
-### Making a Progressive Web App
+```
+npm run build
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+Outputs a production build in the `build` folder.
 
-### Advanced Configuration
+## Notes
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+- Theme toggle (Light/Dark) is available in the top bar.
+- Ensure the backend is running and accessible from the configured REACT_APP_BACKEND_URL.
