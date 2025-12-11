@@ -36,9 +36,9 @@ Open http://localhost:3000 in your browser.
 
 ## Usage
 
-1. Enter one or more tickers (comma-separated), e.g., `AAPL, MSFT`.
+1. Enter one or more tickers (comma-separated), e.g., `AAPL, MSFT`. You may also leave tickers empty to fetch top movers from NASDAQ.
 2. Select Single date or Date range.
-3. Optionally set Min/Max growth %, Top N limit, and Price field (close/adj_close/open).
+3. Optionally set Min/Max growth %, Top N limit (defaults to 10 if left empty), and Price field (close/adj_close/open).
 4. Click Analyze Growth to fetch and display results.
 5. Click on table headers to sort by a column (e.g., Growth %).
 

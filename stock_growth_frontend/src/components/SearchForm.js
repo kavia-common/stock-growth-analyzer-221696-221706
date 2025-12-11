@@ -82,9 +82,7 @@ export default function SearchForm({ onSearch, loading }) {
 
   function validate() {
     const errs = [];
-    if (!parsedTickers.length) {
-      errs.push('Please enter at least one ticker.');
-    }
+    // Relaxed: allow no tickers to fetch top movers from NASDAQ
     if (mode === 'single') {
       if (!singleDate) {
         errs.push('Please select a date.');
@@ -114,14 +112,26 @@ export default function SearchForm({ onSearch, loading }) {
     if (!validate()) return;
 
     const payload = {
-      tickers: parsedTickers,
       start_date: mode === 'single' ? singleDate : startDate,
       end_date: mode === 'single' ? singleDate : endDate,
     };
 
+    // Only include tickers if provided; otherwise send universe for top movers
+    if (parsedTickers.length > 0) {
+      payload.tickers = parsedTickers;
+    } else {
+      payload.universe = 'NASDAQ';
+    }
+
+    // keep limit configurable, default to 10 if empty
+    if (limit === '' || Number.isNaN(Number(limit))) {
+      payload.limit = 10;
+    } else {
+      payload.limit = Number(limit);
+    }
+
     if (minGrowthPct !== '') payload.min_growth_pct = Number(minGrowthPct);
     if (maxGrowthPct !== '') payload.max_growth_pct = Number(maxGrowthPct);
-    if (limit !== '') payload.limit = Number(limit);
     if (priceField) payload.price_field = priceField;
 
     onSearch(payload);
@@ -131,15 +141,17 @@ export default function SearchForm({ onSearch, loading }) {
     <form className="card form-card" onSubmit={handleSubmit} noValidate>
       <div className="form-grid">
         <div className="form-field full">
-          <label htmlFor="tickers">Tickers (comma-separated) *</label>
+          <label htmlFor="tickers">Tickers (comma-separated)</label>
           <input
             id="tickers"
             type="text"
-            placeholder="AAPL, MSFT, GOOGL"
+            placeholder="Leave empty for top NASDAQ movers, or enter AAPL, MSFT"
             value={tickers}
             onChange={(e) => setTickers(e.target.value)}
-            required
           />
+          <span className="muted">
+            Tip: Submit with no tickers to get top movers from NASDAQ (default top {limit || 10}).
+          </span>
         </div>
 
         <div className="form-field full mode-row">

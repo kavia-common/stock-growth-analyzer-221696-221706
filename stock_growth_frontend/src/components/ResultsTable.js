@@ -7,6 +7,7 @@ import React, { useMemo, useState } from 'react';
  * Props:
  * - results: Array of items with fields:
  *   { ticker, start_date, end_date, start_price, end_price, growth_pct, absolute_return, data_points }
+ *   Note: Also supports backend variations like growthPercent, absoluteReturn, dataPoints.
  * - loading: boolean
  * - error: string | null
  */
@@ -32,12 +33,40 @@ export default function ResultsTable({ results, loading, error }) {
     });
   }
 
+  // Normalize any backend naming to our table schema
+  const normalize = (r) => {
+    const start_price =
+      r.start_price ?? r.startPrice ?? r.start ?? null;
+    const end_price =
+      r.end_price ?? r.endPrice ?? r.end ?? null;
+    const growth_pct =
+      r.growth_pct ?? r.growthPercent ?? r.growth ?? null;
+    const absolute_return =
+      r.absolute_return ?? r.absoluteReturn ?? r.return ?? null;
+    const data_points =
+      r.data_points ?? r.dataPoints ?? r.points ?? null;
+
+    const start_date = r.start_date ?? r.startDate ?? r.from ?? '';
+    const end_date = r.end_date ?? r.endDate ?? r.to ?? '';
+    const ticker = r.ticker ?? r.symbol ?? r.name ?? '';
+
+    return {
+      ...r,
+      start_price,
+      end_price,
+      growth_pct,
+      absolute_return,
+      data_points,
+      start_date,
+      end_date,
+      ticker,
+      period: `${start_date} → ${end_date}`,
+    };
+  };
+
   const tableData = useMemo(() => {
     if (!Array.isArray(results)) return [];
-    return results.map((r) => ({
-      ...r,
-      period: `${r.start_date} → ${r.end_date}`,
-    }));
+    return results.map(normalize);
   }, [results]);
 
   const sorted = useMemo(() => {
