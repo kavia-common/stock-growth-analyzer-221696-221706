@@ -6,7 +6,14 @@
  // When the frontend is served via HTTPS (e.g., cloud preview), ensure the base URL is also HTTPS
  // to avoid mixed-content and CORS issues behind the proxy. Fallback to localhost:3001.
 //
+let __BASE_URL_PIN = null; // optional runtime pin override for diagnostics
+
 function resolveBaseUrl() {
+  // Runtime pin takes highest precedence (diagnostics and quick override without rebuild)
+  if (__BASE_URL_PIN && typeof __BASE_URL_PIN === 'string') {
+    return __BASE_URL_PIN.trim();
+  }
+
   // Env override first
   const envVal =
     typeof process !== 'undefined' &&
@@ -21,10 +28,10 @@ function resolveBaseUrl() {
       const u = new URL(window.location.origin);
       if (u.port === '3000') {
         u.port = '3001';
-        return u.toString().replace(/\/+$/, '');
+        return u.toString().replace(/\/*$/, '');
       }
       // If not on 3000, still try same origin (proxy setups)
-      return window.location.origin.replace(/\/+$/, '');
+      return window.location.origin.replace(/\/*$/, '');
     } catch {
       // ignore
     }
@@ -32,13 +39,13 @@ function resolveBaseUrl() {
   return 'http://localhost:3001';
 }
 
-const BASE_URL = resolveBaseUrl();
+let BASE_URL = resolveBaseUrl();
 
 /**
  * Build a full URL from a path.
  */
 function buildUrl(path) {
-  const base = BASE_URL.replace(/\/+$/, '');
+  const base = BASE_URL.replace(/\/*$/, '');
   const clean = path.startsWith('/') ? path : `/${path}`;
   return `${base}${clean}`;
 }
@@ -138,6 +145,8 @@ export async function analyzeGrowth(payload) {
       headers: {
         'Content-Type': 'application/json',
       },
+      // Note: credentials omitted by default. If your backend expects cookies, set credentials: 'include'
+      // and ensure backend CORS allows credentials and exact origin (no wildcard).
       body: JSON.stringify(payload),
     });
   } catch (networkErr) {
@@ -153,6 +162,49 @@ export async function analyzeGrowth(payload) {
 // PUBLIC_INTERFACE
 export function getApiBaseUrl() {
   /** Returns the resolved API base URL for display/debug purposes. */
+  return BASE_URL;
+}
+
+// PUBLIC_INTERFACE
+export function getApiBaseUrlDetails() {
+  /**
+   * PUBLIC_INTERFACE
+   * Return details about how the BASE_URL was determined.
+   * { baseUrl, source: 'runtime-pin' | 'env' | 'inferred' | 'fallback' }
+   */
+  let source = 'fallback';
+  if (__BASE_URL_PIN) {
+    source = 'runtime-pin';
+  } else if (
+    typeof process !== 'undefined' &&
+    process.env &&
+    process.env.REACT_APP_BACKEND_URL &&
+    process.env.REACT_APP_BACKEND_URL.trim()
+  ) {
+    source = 'env';
+  } else if (typeof window !== 'undefined' && window.location && window.location.origin) {
+    source = 'inferred';
+  }
+  return { baseUrl: BASE_URL, source };
+}
+
+// PUBLIC_INTERFACE
+export function pinApiBaseUrl(url) {
+  /**
+   * PUBLIC_INTERFACE
+   * Pin/override the API base URL at runtime (useful for diagnosing HTTPS/proxy issues without rebuild).
+   * Example (in browser console):
+   *   import { pinApiBaseUrl, diagnosticsRun } from './api/client';
+   *   pinApiBaseUrl('https://vscode-internal-26796-beta.beta01.cloud.kavia.ai:3001');
+   *   diagnosticsRun();
+   */
+  if (typeof url !== 'string' || !url.trim()) {
+    throw new Error('pinApiBaseUrl(url): url must be a non-empty string');
+  }
+  __BASE_URL_PIN = url.trim();
+  BASE_URL = resolveBaseUrl();
+  // eslint-disable-next-line no-console
+  console.log('[pinApiBaseUrl] BASE_URL pinned to:', BASE_URL);
   return BASE_URL;
 }
 
@@ -182,4 +234,97 @@ export async function runMinimalRepro() {
     console.error('[runMinimalRepro] Error:', e);
     throw e;
   }
+}
+
+// PUBLIC_INTERFACE
+export async function diagnosticsRun() {
+  /**
+   * PUBLIC_INTERFACE
+   * Run a comprehensive diagnostics sequence to debug CORS/HTTPS/preflight and request URL resolution.
+   * Steps:
+   * 1) Log getApiBaseUrlDetails()
+   * 2) Perform OPTIONS preflight to /analyze-growth and log status/headers
+   * 3) Perform POST with the minimal payload and log details (status, headers, JSON or text)
+   * Returns an object with captured details for further inspection.
+   */
+  const details = {
+    baseUrl: getApiBaseUrl(),
+    baseUrlDetails: getApiBaseUrlDetails(),
+    preflight: null,
+    post: null,
+  };
+
+  const preflightUrl = buildUrl('/analyze-growth');
+  try {
+    const preRes = await fetch(preflightUrl, {
+      method: 'OPTIONS',
+      headers: {
+        'Access-Control-Request-Method': 'POST',
+        'Access-Control-Request-Headers': 'content-type',
+        Origin: typeof window !== 'undefined' ? window.location.origin : '',
+      },
+    });
+    const preHeaders = {};
+    preRes.headers.forEach((v, k) => (preHeaders[k] = v));
+    details.preflight = {
+      url: preflightUrl,
+      status: preRes.status,
+      ok: preRes.ok,
+      headers: preHeaders,
+    };
+    // eslint-disable-next-line no-console
+    console.log('[diagnosticsRun] Preflight OPTIONS', details.preflight);
+  } catch (e) {
+    details.preflight = {
+      url: preflightUrl,
+      error: `${e?.message || e}`,
+    };
+    // eslint-disable-next-line no-console
+    console.warn('[diagnosticsRun] Preflight OPTIONS error', details.preflight);
+  }
+
+  const payload = {
+    start_date: '2025-11-11',
+    end_date: '2025-12-11',
+    limit: 10,
+    universe: 'NASDAQ',
+  };
+
+  const postUrl = preflightUrl;
+  try {
+    const postRes = await fetch(postUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const postHeaders = {};
+    postRes.headers.forEach((v, k) => (postHeaders[k] = v));
+    const contentType = postRes.headers.get('content-type') || '';
+    let body;
+    try {
+      body = contentType.includes('application/json') ? await postRes.json() : await postRes.text();
+    } catch (parseErr) {
+      body = `Response parse error: ${parseErr?.message || parseErr}`;
+    }
+    details.post = {
+      url: postUrl,
+      status: postRes.status,
+      ok: postRes.ok,
+      headers: postHeaders,
+      body,
+    };
+    // eslint-disable-next-line no-console
+    console.log('[diagnosticsRun] POST', details.post);
+  } catch (e) {
+    details.post = {
+      url: postUrl,
+      error: `${e?.message || e}`,
+      hint:
+        'If error is "Failed to fetch", it is usually due to CORS or HTTPS/HTTP mismatch. Ensure backend CORS allows the exact frontend origin and the backend URL is HTTPS on cloud preview.',
+    };
+    // eslint-disable-next-line no-console
+    console.warn('[diagnosticsRun] POST error', details.post);
+  }
+
+  return details;
 }
