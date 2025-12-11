@@ -43,6 +43,21 @@ function buildUrl(path) {
 }
 
 /**
+ * Normalize and map result row keys to a consistent shape for UI.
+ */
+function normalizeRow(row) {
+  if (!row || typeof row !== 'object') return row;
+  const r = { ...row };
+  if (r.absolute_return === undefined && r.abs_return !== undefined) {
+    r.absolute_return = r.abs_return;
+  }
+  if (r.data_points === undefined && r.points_count !== undefined) {
+    r.data_points = r.points_count;
+  }
+  return r;
+}
+
+/**
  * Normalize JSON fetch responses and handle errors.
  */
 async function handleResponse(res) {
@@ -68,7 +83,18 @@ async function handleResponse(res) {
     err.data = data;
     throw err;
   }
-  return data;
+
+  // Ensure {results, warnings} shape for consumers
+  if (Array.isArray(data)) {
+    return { results: data.map(normalizeRow), warnings: [] };
+  }
+  if (data && Array.isArray(data.results)) {
+    return {
+      results: data.results.map(normalizeRow),
+      warnings: Array.isArray(data.warnings) ? data.warnings : [],
+    };
+  }
+  return { results: [], warnings: [] };
 }
 
 // PUBLIC_INTERFACE
@@ -83,9 +109,10 @@ export async function analyzeGrowth(payload) {
    *   min_growth_pct?: number,
    *   max_growth_pct?: number,
    *   limit?: number,
-   *   price_field?: 'close' | 'adj_close' | 'open'
+   *   price_field?: 'close' | 'adj_close' | 'open',
+   *   universe?: 'NASDAQ' | 'SP500'
    * }
-   * Returns JSON from backend.
+   * Returns {results, warnings}.
    */
   const url = buildUrl('/analyze-growth');
   // Log for verification

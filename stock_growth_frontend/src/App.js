@@ -12,6 +12,7 @@ function App() {
    */
   const [theme, setTheme] = useState('light');
   const [results, setResults] = useState([]);
+  const [warnings, setWarnings] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -29,15 +30,26 @@ function App() {
     setLoading(true);
     setError('');
     setResults([]);
+    setWarnings([]);
     try {
       const data = await analyzeGrowth(payload);
-      // Expecting array; handle unexpected shapes gracefully
-      if (Array.isArray(data)) {
-        setResults(data);
-      } else if (data && Array.isArray(data.results)) {
+      // Expecting {results, warnings}; remain resilient to prior shapes
+      if (data && Array.isArray(data.results)) {
         setResults(data.results);
+      } else if (Array.isArray(data)) {
+        setResults(data);
       } else {
         setResults([]);
+      }
+      if (data && Array.isArray(data.warnings)) {
+        setWarnings(data.warnings);
+      } else if (!Array.isArray(data)) {
+        // if we got no results and no explicit warnings, guide the user
+        if ((data?.results?.length ?? 0) === 0) {
+          setWarnings([
+            'No results were returned. This can occur if selected dates are non-trading days or the provider lacks coverage. Try nearby business days or adjust filters/universe.',
+          ]);
+        }
       }
     } catch (err) {
       const message =
@@ -82,6 +94,19 @@ function App() {
         <section className="form-section">
           <SearchForm onSearch={onSearch} loading={loading} />
         </section>
+
+        {warnings.length > 0 && (
+          <section className="container" aria-live="polite">
+            <div className="alert" style={{ background: 'rgba(234,179,8,0.12)', border: '1px solid rgba(234,179,8,0.3)', color: '#854d0e', borderRadius: 10, padding: 10 }}>
+              <strong>Warnings</strong>
+              <ul>
+                {warnings.map((w, i) => (
+                  <li key={i}>{w}</li>
+                ))}
+              </ul>
+            </div>
+          </section>
+        )}
 
         <section className="results-section">
           <ResultsTable results={results} loading={loading} error={error} />

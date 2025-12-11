@@ -18,6 +18,7 @@ export default function SearchForm({ onSearch, loading }) {
   const [maxGrowthPct, setMaxGrowthPct] = useState('');
   const [limit, setLimit] = useState(10);
   const [priceField, setPriceField] = useState('close');
+  const [universe, setUniverse] = useState('NASDAQ'); // NEW: Universe selection
   const [errors, setErrors] = useState([]);
 
   // Persist last inputs to localStorage (optional)
@@ -36,6 +37,7 @@ export default function SearchForm({ onSearch, loading }) {
         setMaxGrowthPct(parsed.maxGrowthPct ?? '');
         setLimit(parsed.limit ?? 10);
         setPriceField(parsed.priceField || 'close');
+        setUniverse(parsed.universe || 'NASDAQ');
       }
     } catch {
       // ignore
@@ -53,6 +55,7 @@ export default function SearchForm({ onSearch, loading }) {
       maxGrowthPct,
       limit,
       priceField,
+      universe,
     };
     try {
       localStorage.setItem(storageKey, JSON.stringify(toSave));
@@ -69,6 +72,7 @@ export default function SearchForm({ onSearch, loading }) {
     maxGrowthPct,
     limit,
     priceField,
+    universe,
   ]);
 
   const parsedTickers = useMemo(
@@ -82,7 +86,7 @@ export default function SearchForm({ onSearch, loading }) {
 
   function validate() {
     const errs = [];
-    // Relaxed: allow no tickers to fetch top movers from NASDAQ
+    // Relaxed: allow no tickers to fetch top movers from selected universe
     if (mode === 'single') {
       if (!singleDate) {
         errs.push('Please select a date.');
@@ -120,7 +124,7 @@ export default function SearchForm({ onSearch, loading }) {
     if (parsedTickers.length > 0) {
       payload.tickers = parsedTickers;
     } else {
-      payload.universe = 'NASDAQ';
+      payload.universe = universe || 'NASDAQ';
     }
 
     // keep limit configurable, default to 10 if empty
@@ -145,13 +149,25 @@ export default function SearchForm({ onSearch, loading }) {
           <input
             id="tickers"
             type="text"
-            placeholder="Leave empty for top NASDAQ movers, or enter AAPL, MSFT"
+            placeholder="Leave empty for top universe movers, or enter AAPL, MSFT"
             value={tickers}
             onChange={(e) => setTickers(e.target.value)}
           />
           <span className="muted">
-            Tip: Submit with no tickers to get top movers from NASDAQ (default top {limit || 10}).
+            Tip: Submit with no tickers to get top movers from the selected universe (default top {limit || 10}).
           </span>
+        </div>
+
+        <div className="form-field">
+          <label htmlFor="universe">Universe (used when no tickers)</label>
+          <select
+            id="universe"
+            value={universe}
+            onChange={(e) => setUniverse(e.target.value)}
+          >
+            <option value="NASDAQ">NASDAQ 100</option>
+            <option value="SP500">S&amp;P 500</option>
+          </select>
         </div>
 
         <div className="form-field full mode-row">
