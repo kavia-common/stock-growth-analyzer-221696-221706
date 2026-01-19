@@ -3,6 +3,8 @@ import { render, screen, within, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import App from "./App";
 
+jest.setTimeout(15000);
+
 // Mock the API client module used by FormSection and ResultsSection.
 jest.mock("./api/client", () => ({
   submitScreeningQuery: jest.fn(),

@@ -456,7 +456,11 @@ export default function FormSection() {
           </div>
 
           {!isValid ? (
-            <div className="formErrorBanner" role="note">
+            <div
+              className="formErrorBanner"
+              role="note"
+              aria-label="Fix the highlighted fields"
+            >
               Fix the highlighted fields to run the screen.
             </div>
           ) : null}
