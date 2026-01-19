@@ -1,4 +1,5 @@
 import React from "react";
+import { act } from "react-dom/test-utils";
 import { render, screen, within, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import App from "./App";
@@ -185,13 +186,39 @@ describe("Stock Growth Analyzer - basic flows", () => {
   });
 
   test("rate limit banner/message handling when polling gets 429 with Retry-After", async () => {
+    // Important: enable fake timers BEFORE creating userEvent, so userEvent's internal timers are also faked.
     jest.useFakeTimers();
 
+    // Use a single userEvent instance configured to advance Jest timers.
     const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
 
     // Helper: flush pending promise microtasks between timer advances so async polling can proceed.
     const flushMicrotasks = async () => {
       await Promise.resolve();
+    };
+
+    /**
+     * Advance timers within React's act() so timer-driven state updates are properly flushed.
+     * We use async Jest helpers to ensure timers actually run under fake timers.
+     *
+     * @param {number} ms
+     */
+    const advance = async (ms) => {
+      await act(async () => {
+        // Prefer async helpers when available (Jest 28+).
+        if (typeof jest.advanceTimersByTimeAsync === "function") {
+          await jest.advanceTimersByTimeAsync(ms);
+        } else {
+          jest.advanceTimersByTime(ms);
+          // Run any timers that became pending during this time slice.
+          if (typeof jest.runOnlyPendingTimersAsync === "function") {
+            await jest.runOnlyPendingTimersAsync();
+          }
+        }
+      });
+
+      // Flush microtasks created by resolved promises after the timer tick.
+      await flushMicrotasks();
     };
 
     // Initial submit returns pending to activate polling.
@@ -225,27 +252,26 @@ describe("Stock Growth Analyzer - basic flows", () => {
 
     await user.click(screen.getByRole("button", { name: /Run screen/i }));
 
-    // The polling loop waits 1s before first request (attempt 0 backoff).
+    // Ensure submit happened (starts polling via responseStatus="pending").
     await waitFor(() => expect(submitScreeningQuery).toHaveBeenCalledTimes(1));
 
-    // Trigger attempt 0 delay -> first poll request.
-    jest.advanceTimersByTime(1000);
-    await flushMicrotasks();
+    // Polling attempt 0 waits 1s before the first getScreeningResults call.
+    await advance(1000);
 
-    await waitFor(() => expect(getScreeningResults).toHaveBeenCalledTimes(1));
+    // Now assert synchronously that the mocked API was called (fake timers must progress polling).
+    expect(getScreeningResults).toHaveBeenCalledTimes(1);
 
     // After 429, banner should appear with wait seconds.
     const rateLimitBanner = await screen.findByRole("status");
     expect(rateLimitBanner).toHaveTextContent(/Rate limit:/i);
     expect(rateLimitBanner).toHaveTextContent(/Waiting 2s/i);
 
-    // Poller will sleep Retry-After (2s) then continue to next attempt (attempt 1) which waits 2s backoff.
-    jest.advanceTimersByTime(2000); // Retry-After wait
-    await flushMicrotasks();
-    jest.advanceTimersByTime(2000); // attempt 1 backoff wait
-    await flushMicrotasks();
+    // Poller sleeps Retry-After (2s) then continues to next attempt which waits 2s backoff.
+    await advance(2000); // Retry-After wait
+    await advance(2000); // attempt 1 backoff wait
 
-    await waitFor(() => expect(getScreeningResults).toHaveBeenCalledTimes(2));
+    // Assert synchronously after timers/microtasks flush.
+    expect(getScreeningResults).toHaveBeenCalledTimes(2);
 
     // Completed results should render.
     const table = await screen.findByRole("table", { name: /Results table/i });
