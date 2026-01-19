@@ -23,7 +23,8 @@ function ShellLayout() {
                   </span>
                 </div>
                 <p className="subtitle">
-                  Screen tickers by growth over a date range — responsive UI shell (API wiring next).
+                  Screen tickers by growth over a date range — validated form, sortable results, and
+                  polling with backoff.
                 </p>
               </div>
             </div>
@@ -51,7 +52,7 @@ function ShellLayout() {
             <div>
               <strong>Tip:</strong> On mobile, sections stack for easier scanning.
             </div>
-            <div>v0.1 • UI shell ready • API not connected</div>
+            <div>v0.1 • Form + results wired • Polling enabled</div>
           </div>
         </div>
       </footer>
