@@ -318,13 +318,21 @@ export default function FormSection() {
               value={tickersRaw}
               onChange={(e) => setTickersRaw(e.target.value)}
               onBlur={() => setTouched((t) => ({ ...t, tickersRaw: true }))}
+              aria-describedby="tickers-hint tickers-error"
+              aria-invalid={show("tickersRaw") ? "true" : "false"}
+              autoComplete="off"
+              spellCheck={false}
             />
-            <div className="fieldHint">Tip: separate by commas, spaces, or new lines.</div>
+            <div className="fieldHint" id="tickers-hint">
+              Enter one or more tickers separated by commas, spaces, or new lines (e.g. AAPL MSFT NVDA).
+            </div>
             {show("tickersRaw") ? (
-              <div className="fieldError" role="alert">
+              <div className="fieldError" id="tickers-error" role="alert">
                 {errors.tickersRaw}
               </div>
-            ) : null}
+            ) : (
+              <div className="fieldError" id="tickers-error" style={{ display: "none" }} aria-hidden="true" />
+            )}
           </div>
 
           <div className="formRow twoCol">
@@ -340,12 +348,20 @@ export default function FormSection() {
                 onChange={(e) => setStart(e.target.value)}
                 onBlur={() => setTouched((t) => ({ ...t, start: true }))}
                 required
+                aria-describedby="start-hint start-error"
+                aria-invalid={show("start") ? "true" : "false"}
+                autoComplete="off"
               />
+              <div className="fieldHint" id="start-hint">
+                Choose the first day in the growth period.
+              </div>
               {show("start") ? (
-                <div className="fieldError" role="alert">
+                <div className="fieldError" id="start-error" role="alert">
                   {errors.start}
                 </div>
-              ) : null}
+              ) : (
+                <div className="fieldError" id="start-error" style={{ display: "none" }} aria-hidden="true" />
+              )}
             </div>
 
             <div>
@@ -360,12 +376,20 @@ export default function FormSection() {
                 onChange={(e) => setEnd(e.target.value)}
                 onBlur={() => setTouched((t) => ({ ...t, end: true }))}
                 required
+                aria-describedby="end-hint end-error"
+                aria-invalid={show("end") ? "true" : "false"}
+                autoComplete="off"
               />
+              <div className="fieldHint" id="end-hint">
+                Must be on or after the start date.
+              </div>
               {show("end") ? (
-                <div className="fieldError" role="alert">
+                <div className="fieldError" id="end-error" role="alert">
                   {errors.end}
                 </div>
-              ) : null}
+              ) : (
+                <div className="fieldError" id="end-error" style={{ display: "none" }} aria-hidden="true" />
+              )}
             </div>
           </div>
 
@@ -382,12 +406,17 @@ export default function FormSection() {
                 value={growthMin}
                 onChange={(e) => setGrowthMin(e.target.value)}
                 onBlur={() => setTouched((t) => ({ ...t, growthMin: true }))}
+                aria-describedby="growth-hint growthMin-error"
+                aria-invalid={show("growthMin") ? "true" : "false"}
+                autoComplete="off"
               />
               {show("growthMin") ? (
-                <div className="fieldError" role="alert">
+                <div className="fieldError" id="growthMin-error" role="alert">
                   {errors.growthMin}
                 </div>
-              ) : null}
+              ) : (
+                <div className="fieldError" id="growthMin-error" style={{ display: "none" }} aria-hidden="true" />
+              )}
             </div>
 
             <div>
@@ -402,12 +431,21 @@ export default function FormSection() {
                 value={growthMax}
                 onChange={(e) => setGrowthMax(e.target.value)}
                 onBlur={() => setTouched((t) => ({ ...t, growthMax: true }))}
+                aria-describedby="growth-hint growthMax-error"
+                aria-invalid={show("growthMax") ? "true" : "false"}
+                autoComplete="off"
               />
               {show("growthMax") ? (
-                <div className="fieldError" role="alert">
+                <div className="fieldError" id="growthMax-error" role="alert">
                   {errors.growthMax}
                 </div>
-              ) : null}
+              ) : (
+                <div className="fieldError" id="growthMax-error" style={{ display: "none" }} aria-hidden="true" />
+              )}
+            </div>
+
+            <div className="fieldHint" id="growth-hint" style={{ gridColumn: "1 / -1" }}>
+              Optional: filter by growth percentage range (min and/or max).
             </div>
           </div>
 
@@ -425,13 +463,20 @@ export default function FormSection() {
                 value={topNInput}
                 onChange={(e) => setTopNInput(e.target.value)}
                 onBlur={() => setTouched((t) => ({ ...t, topN: true }))}
+                aria-describedby="topN-hint topN-error"
+                aria-invalid={show("topN") ? "true" : "false"}
+                autoComplete="off"
               />
-              <div className="fieldHint">Defaults to 10 when empty.</div>
+              <div className="fieldHint" id="topN-hint">
+                Number of top tickers to return (defaults to 10).
+              </div>
               {show("topN") ? (
-                <div className="fieldError" role="alert">
+                <div className="fieldError" id="topN-error" role="alert">
                   {errors.topN}
                 </div>
-              ) : null}
+              ) : (
+                <div className="fieldError" id="topN-error" style={{ display: "none" }} aria-hidden="true" />
+              )}
             </div>
 
             <div className="formActions">

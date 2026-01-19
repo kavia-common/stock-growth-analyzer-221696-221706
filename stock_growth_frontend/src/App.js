@@ -23,8 +23,8 @@ function ShellLayout() {
                   </span>
                 </div>
                 <p className="subtitle">
-                  Screen tickers by growth over a date range — validated form, sortable results, and
-                  polling with backoff.
+                  Screen tickers by growth over a date range — validated inputs, sortable results, and
+                  smart polling with backoff.
                 </p>
               </div>
             </div>

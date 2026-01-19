@@ -304,6 +304,9 @@ export default function ResultsSection() {
         {rateLimit ? (
           <div className="banner bannerWarn" role="status" aria-live="polite">
             <strong>Rate limit:</strong> {rateLimit.message}
+            <div className="bannerDetails" style={{ color: "rgba(11, 79, 92, 0.9)" }}>
+              Tip: keep this tab open—results will resume automatically after the wait.
+            </div>
           </div>
         ) : null}
 

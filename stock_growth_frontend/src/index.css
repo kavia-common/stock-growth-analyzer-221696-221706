@@ -1,12 +1,16 @@
 :root {
+  /* Theme accents (requested) */
   --color-primary: #3b82f6;
   --color-secondary: #64748b;
   --color-success: #06b6d4;
+  --color-error: #ef4444;
 
+  /* Surfaces */
   --color-bg: #f9fafb;
   --color-surface: #ffffff;
   --color-text: #111827;
 
+  /* Supporting tokens */
   --color-border: rgba(17, 24, 39, 0.12);
 
   --shadow-sm: 0 1px 2px rgba(17, 24, 39, 0.06);
@@ -37,6 +41,10 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+::selection {
+  background: rgba(59, 130, 246, 0.22);
+}
+
 a {
   color: var(--color-primary);
   text-decoration: none;
@@ -44,6 +52,11 @@ a {
 
 a:hover {
   text-decoration: underline;
+}
+
+:focus-visible {
+  outline: 3px solid rgba(59, 130, 246, 0.35);
+  outline-offset: 2px;
 }
 
 code {
