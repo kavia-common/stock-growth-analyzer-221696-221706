@@ -1,48 +1,71 @@
-import React, { useState, useEffect } from 'react';
-import logo from './logo.svg';
-import './App.css';
+import React from "react";
+import "./App.css";
+import FormSection from "./components/FormSection";
+import ResultsSection from "./components/ResultsSection";
+import { AppStateProvider, useAppState } from "./state/appState";
+
+function ShellLayout() {
+  const { status } = useAppState();
+
+  return (
+    <div className="appShell">
+      <header className="topBar">
+        <div className="container">
+          <div className="topBarInner">
+            <div className="brand">
+              <div className="brandMark" aria-hidden="true" />
+              <div className="brandText">
+                <div className="titleRow">
+                  <h1 className="title">Stock Growth Analyzer</h1>
+                  <span className="badge" title="Light theme shell">
+                    <span className="badgeDot" aria-hidden="true" />
+                    Light / Modern
+                  </span>
+                </div>
+                <p className="subtitle">
+                  Screen tickers by growth over a date range — responsive UI shell (API wiring next).
+                </p>
+              </div>
+            </div>
+
+            <div className="statusPill" aria-label="App status">
+              <span className="statusDot" aria-hidden="true" />
+              <span>{status}</span>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main className="main">
+        <div className="container">
+          <div className="grid">
+            <FormSection />
+            <ResultsSection />
+          </div>
+        </div>
+      </main>
+
+      <footer className="footer">
+        <div className="container">
+          <div className="footerInner">
+            <div>
+              <strong>Tip:</strong> On mobile, sections stack for easier scanning.
+            </div>
+            <div>v0.1 • UI shell ready • API not connected</div>
+          </div>
+        </div>
+      </footer>
+    </div>
+  );
+}
 
 // PUBLIC_INTERFACE
 function App() {
-  const [theme, setTheme] = useState('light');
-
-  // Effect to apply theme to document element
-  useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
-  }, [theme]);
-
-  // PUBLIC_INTERFACE
-  const toggleTheme = () => {
-    setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light');
-  };
-
+  /** App entry component: provides state scaffolding and renders the baseline UI shell. */
   return (
-    <div className="App">
-      <header className="App-header">
-        <button 
-          className="theme-toggle" 
-          onClick={toggleTheme}
-          aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
-        >
-          {theme === 'light' ? '🌙 Dark' : '☀️ Light'}
-        </button>
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <p>
-          Current theme: <strong>{theme}</strong>
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <AppStateProvider>
+      <ShellLayout />
+    </AppStateProvider>
   );
 }
 
