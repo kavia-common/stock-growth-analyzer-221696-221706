@@ -1,5 +1,4 @@
-import React from "react";
-import { act } from "react-dom/test-utils";
+import React, { act } from "react";
 import { render, screen, within, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import App from "./App";
@@ -44,9 +43,7 @@ describe("Stock Growth Analyzer - basic flows", () => {
     expect(submitScreeningQuery).not.toHaveBeenCalled();
 
     // Validation banner should be visible.
-    expect(
-      screen.getByRole("note", { name: /Fix the highlighted fields/i })
-    ).toBeInTheDocument();
+    expect(screen.getByRole("note", { name: /Fix the highlighted fields/i })).toBeInTheDocument();
 
     // Individual field errors should show after submit (touched set to true).
     const alerts = screen.getAllByRole("alert");
@@ -192,14 +189,13 @@ describe("Stock Growth Analyzer - basic flows", () => {
     // Use a single userEvent instance configured to advance Jest timers.
     const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
 
-    // Helper: flush pending promise microtasks between timer advances so async polling can proceed.
-    const flushMicrotasks = async () => {
+    // Optional helper: a microtask flush can help settle promise continuations in some Jest/timer edge cases.
+    const flush = async () => {
       await Promise.resolve();
     };
 
     /**
      * Advance timers within React's act() so timer-driven state updates are properly flushed.
-     * We use async Jest helpers to ensure timers actually run under fake timers.
      *
      * @param {number} ms
      */
@@ -210,15 +206,10 @@ describe("Stock Growth Analyzer - basic flows", () => {
           await jest.advanceTimersByTimeAsync(ms);
         } else {
           jest.advanceTimersByTime(ms);
-          // Run any timers that became pending during this time slice.
-          if (typeof jest.runOnlyPendingTimersAsync === "function") {
-            await jest.runOnlyPendingTimersAsync();
-          }
         }
       });
 
-      // Flush microtasks created by resolved promises after the timer tick.
-      await flushMicrotasks();
+      await flush();
     };
 
     // Initial submit returns pending to activate polling.
@@ -248,7 +239,7 @@ describe("Stock Growth Analyzer - basic flows", () => {
     await user.clear(screen.getByLabelText(/Start date/i));
     await user.type(screen.getByLabelText(/Start date/i), "2024-01-01");
     await user.clear(screen.getByLabelText(/End date/i));
-    await user.type(screen.getByLabelText(/End date/i), "2024-02-01");
+    await user.type(screen.getByLabelText(/End date/i), "2024-02-02");
 
     await user.click(screen.getByRole("button", { name: /Run screen/i }));
 
@@ -258,8 +249,8 @@ describe("Stock Growth Analyzer - basic flows", () => {
     // Polling attempt 0 waits 1s before the first getScreeningResults call.
     await advance(1000);
 
-    // Now assert synchronously that the mocked API was called (fake timers must progress polling).
-    expect(getScreeningResults).toHaveBeenCalledTimes(1);
+    // Wait for the async polling request to actually be issued.
+    await waitFor(() => expect(getScreeningResults).toHaveBeenCalledTimes(1));
 
     // After 429, banner should appear with wait seconds.
     const rateLimitBanner = await screen.findByRole("status");
@@ -268,10 +259,10 @@ describe("Stock Growth Analyzer - basic flows", () => {
 
     // Poller sleeps Retry-After (2s) then continues to next attempt which waits 2s backoff.
     await advance(2000); // Retry-After wait
-    await advance(2000); // attempt 1 backoff wait
+    await waitFor(() => expect(getScreeningResults).toHaveBeenCalledTimes(1)); // still 1 call during retry-after
 
-    // Assert synchronously after timers/microtasks flush.
-    expect(getScreeningResults).toHaveBeenCalledTimes(2);
+    await advance(2000); // attempt 1 backoff wait
+    await waitFor(() => expect(getScreeningResults).toHaveBeenCalledTimes(2));
 
     // Completed results should render.
     const table = await screen.findByRole("table", { name: /Results table/i });
